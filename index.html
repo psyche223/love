@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>我喜欢你</title>
+
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+html,body{width:100%;height:100%;overflow:hidden;background:#fff;font-family:'Microsoft YaHei','PingFang SC',sans-serif;user-select:none;-webkit-tap-highlight-color:transparent;}
+
+#layer{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;}
+
+.card{position:absolute;left:0;top:0;display:flex;align-items:center;justify-content:center;color:#333;font-weight:bold;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.15);will-change:transform;}
+
+.star{position:absolute;left:0;top:0;font-size:15px;line-height:1;will-change:transform;}
+
+#centerBox{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:190px;height:58px;background:#ffc0cb;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:bold;color:#c0392b;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;transition:opacity .5s;}
+
+#centerBox.show{opacity:1;}
+
+#endBox{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:20;background:rgba(255,255,255,.85);}
+
+#endBox .heart{font-size:88px;}
+
+#endBox .txt{font-size:32px;font-weight:bold;color:#e74c3c;margin-top:18px;letter-spacing:4px;}
+
+#endBox .sub{font-size:14px;color:#999;margin-top:10px;}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="layer"></div>
+
+<div id="centerBox">我喜欢你</div>
+
+<div id="endBox"><div class="heart">💖</div><div class="txt">我喜欢你</div><div class="sub">永远爱你</div></div>
+
+<script>
+
+const layer = document.getElementById('layer');
+
+const words = ['喜欢你','爱你','想你','一起','加油','真好','平安','快乐','健康','顺利','加衣','好眠','早安','晚安','么么','宝贝','I❤U','好运','甜蜜','幸福'];
+
+const colors = ['#f8bbd0','#bbdefb','#c8e6c9','#fff9c4','#ffccbc','#b3e5fc','#ffe0b2'];
+
+const sw = window.innerWidth, sh = window.innerHeight;
+
+const cx = sw/2, cy = sh/2;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const frame = () => new Promise(r => requestAnimationFrame(r));
+
+function makeCard(text, w, h, color){
+
+  const el = document.createElement('div');
+
+  el.className = 'card';
+
+  el.style.width = w+'px';
+
+  el.style.height = h+'px';
+
+  el.style.background = color;
+
+  el.style.fontSize = Math.max(9, Math.round(w*0.27))+'px';
+
+  el.textContent = text;
+
+  el.style.transform = 'translate('+cx+'px,'+cy+'px)';
+
+  layer.appendChild(el);
+
+  return el;
+
+}
+
+function heartXY(i, n, scale, ox, oy){
+
+  const t = i/n*2*Math.PI;
+
+  const x = 16*Math.pow(Math.sin(t),3);
+
+  const y = 13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+
+  return [ox+x*scale, oy-y*scale];
+
+}
+
+// ============ 第一部分：爱心弹窗 + 满屏彩窗 ============
+
+async function part1(){
+
+  const scale = Math.min(sw, sh)*0.016;
+
+  const points = [];
+
+  for(let i=0;i<100;i++){
+
+    const xy = heartXY(i,100,scale,cx,cy);
+
+    const el = makeCard(['我爱你','喜欢你','❤'][i%3], 34, 20, colors[i%colors.length]);
+
+    el.style.fontSize = '9px';
+
+    el.style.transform = 'translate('+xy[0]+'px,'+xy[1]+'px)';
+
+    points.push(el);
+
+    if(i%2===0) await frame();
+
+  }
+
+  await sleep(1200);
+
+  points.forEach(p=>p.remove());
+
+  const count = 70, cw = 46, ch = 24;
+
+  const wins = [];
+
+  for(let i=0;i<count;i++){
+
+    const x = Math.random()*(sw-cw), y = Math.random()*(sh-ch);
+
+    const el = makeCard(words[Math.floor(Math.random()*words.length)], cw, ch, colors[Math.floor(Math.random()*colors.length)]);
+
+    el.style.transform = 'translate('+x+'px,'+y+'px)';
+
+    wins.push(el);
+
+    if(i%3===0) await frame();
+
+  }
+
+  await sleep(3000);
+
+  wins.forEach(w=>w.remove());
+
+  await sleep(300);
+
+}
+
+// ============ 第二部分：风扇风暴 + 星星粒子 + 大爱心 ============
+
+const K=10, M=6, N=K*M, TURNS=2, FRAMES=80;
+
+const metas = [];
+
+for(let k=0;k<K;k++){
+
+  const base = 2*Math.PI*k/K;
+
+  for(let j=0;j<M;j++){
+
+    const r = Math.min(sw,sh)*0.42*(j+1)/M + (Math.random()*24-12);
+
+    const ang = base + (Math.random()*0.2-0.1);
+
+    metas.push([ang,r]);
+
+  }
+
+}
+
+const hs = [];
+
+const hscale = Math.min(sw, sh)*0.024;
+
+for(let i=0;i<N;i++){
+
+  const xy = heartXY(i,N,hscale,cx,cy-10);
+
+  hs.push(xy);
+
+}
+
+const starts = [];
+
+for(let i=0;i<N;i++){
+
+  const side = Math.floor(Math.random()*8);
+
+  if(side===0) starts.push([Math.random()*60, Math.random()*sh]);
+
+  else if(side===1) starts.push([sw-Math.random()*60, Math.random()*sh]);
+
+  else if(side===2) starts.push([Math.random()*sw, Math.random()*60]);
+
+  else if(side===3) starts.push([Math.random()*sw, sh-Math.random()*60]);
+
+  else if(side===4) starts.push([Math.random()*100, Math.random()*100]);
+
+  else if(side===5) starts.push([sw-Math.random()*100, Math.random()*100]);
+
+  else if(side===6) starts.push([Math.random()*100, sh-Math.random()*100]);
+
+  else starts.push([sw-Math.random()*100, sh-Math.random()*100]);
+
+}
+
+const delays = Array.from({length:N},()=>Math.random()*0.5);
+
+const starChars = ['✨','⭐','🌟','💫'];
+
+const starColors = ['#ffd700','#fff','#ffaa00','#ff8800'];
+
+function makeParticle(i, x, y){
+
+  const w = 64, h = 26;
+
+  const el = makeCard(words[i%words.length], w, h, colors[i%colors.length]);
+
+  el.style.transform = 'translate('+x+'px,'+y+'px)';
+
+  const stars = [];
+
+  for(let s=0;s<2;s++){
+
+    const st = document.createElement('div');
+
+    st.className = 'star';
+
+    st.textContent = starChars[Math.floor(Math.random()*4)];
+
+    st.style.color = starColors[Math.floor(Math.random()*4)];
+
+    layer.appendChild(st);
+
+    stars.push(st);
+
+  }
+
+  function move(nx, ny){
+
+    el.style.transform = 'translate('+nx+'px,'+ny+'px)';
+
+    stars.forEach(function(st, idx){
+
+      const sx = nx + (idx===0 ? -16 : 18) + (Math.random()*10-5);
+
+      const sy = ny + (Math.random()*14-7);
+
+      st.style.transform = 'translate('+sx+'px,'+sy+'px)';
+
+    });
+
+  }
+
+  return {el:el, stars:stars, move:move};
+
+}
+
+function part2(){
+
+  let particles = [];
+
+  for(let i=0;i<N;i++) particles.push(makeParticle(i,cx,cy));
+
+  const center = document.getElementById('centerBox');
+
+  let phase=0, fr=0, starTimer=0;
+
+  function tick(){
+
+    if(phase===0){
+
+      const p = fr/FRAMES;
+
+      for(let i=0;i<N;i++){
+
+        const ang = metas[i][0], r = metas[i][1];
+
+        const a = ang + TURNS*2*Math.PI*(1-p);
+
+        const rr = r*p;
+
+        particles[i].move(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr);
+
+      }
+
+      fr++;
+
+      if(fr>FRAMES){phase=1; fr=0; center.classList.add('show');}
+
+    }
+
+    else if(phase===1){
+
+      fr++;
+
+      if(fr>30){phase=2; fr=0;}
+
+    }
+
+    else if(phase===2){
+
+      const p = fr/FRAMES;
+
+      for(let i=0;i<N;i++){
+
+        const ang = metas[i][0], r = metas[i][1];
+
+        const a = ang + TURNS*2*Math.PI*p;
+
+        const rr = r*(1-p);
+
+        particles[i].move(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr);
+
+      }
+
+      fr++;
+
+      if(fr>FRAMES){
+
+        phase=3; fr=0;
+
+        for(let i=0;i<N;i++) particles[i].move(starts[i][0], starts[i][1]);
+
+      }
+
+    }
+
+    else if(phase===3){
+
+      for(let i=0;i<N;i++){
+
+        const sx = starts[i][0], sy = starts[i][1];
+
+        const hx = hs[i][0], hy = hs[i][1];
+
+        const df = delays[i]*30;
+
+        let local = Math.min(1, Math.max(0,(fr-df)/FRAMES));
+
+        const e = local*local*(3-2*local);
+
+        particles[i].move(sx+(hx-sx)*e, sy+(hy-sy)*e);
+
+      }
+
+      fr++;
+
+      if(fr>FRAMES+30){phase=4; fr=0;}
+
+    }
+
+    else if(phase===4){
+
+      fr++;
+
+      if(fr>240){
+
+        particles.forEach(function(pt){
+
+          pt.el.remove();
+
+          pt.stars.forEach(function(s){s.remove();});
+
+        });
+
+        document.getElementById('endBox').style.display = 'flex';
+
+        return;
+
+      }
+
+    }
+
+    starTimer++;
+
+    if(starTimer%6===0){
+
+      particles.forEach(function(pt){
+
+        pt.stars.forEach(function(st){
+
+          st.textContent = starChars[Math.floor(Math.random()*4)];
+
+          st.style.color = starColors[Math.floor(Math.random()*4)];
+
+        });
+
+      });
+
+    }
+
+    requestAnimationFrame(tick);
+
+  }
+
+  tick();
+
+}
+
+(async function main(){
+
+  await part1();
+
+  part2();
+
+})();
+
+</script>
+
+</body>
+
+</html>
